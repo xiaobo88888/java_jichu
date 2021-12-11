@@ -1,0 +1,98 @@
+HashSet集合添加元素的过程：
+    调用对象的hashCode()方法获取对象的哈希值
+                  ↓
+                  ↓
+    根据对象的哈希值计算对象的存储位置
+                  ↓
+                  ↓
+           该位置是否有元素存在 ————————————————没有———————————————————
+                  ↓                                                ↓
+                  ↓有                                              ↓
+                  ↓                                                ↓
+      遍历该位置的所有元素，和新存入的元素比较                            ↓
+      哈希值是否相同           —————————————都不相同————————————→将元素存储到该位置
+                  ↓                                                  ↑
+                  ↓有相同的                                           |
+                  ↓                                                  |
+        调用equals方法比较对象内容是否相等———————————返回false—————————————
+                  ↓
+                  ↓返回true
+                  ↓
+           说明元素重复，不存储
+
+//hashSet集合存储元素，要保证元素的唯一性，要重写hashCode()和equals()方法
+
+//创建集合对象
+HashSet<String> hs = new HashSet<String>();
+//添加元素
+hs.add("hello");
+hs.add("world");
+hs.add("java");
+---------------------
+public boolean add(E e) {//e就是元素
+    return map.put(e, PRESENT)==null;
+}
+
+static final int hash(Object key) {//key就是元素
+    int h;
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);//这里根据hashCode()方法返回一个元素的哈希值
+}
+public V put(K key, V value) {//key就是元素
+    return putVal(hash(key), key, value, false, true);//hash(key)得到了key元素的哈希值
+}
+
+//这里hash就是元素key的哈希值
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+                   boolean evict) {
+        Node<K,V>[] tab; Node<K,V> p;//哈希表结构的一种实现
+         int n, i;
+
+        //如果哈希表未初始化，则对其初始化
+        if ((tab = table) == null || (n = tab.length) == 0)
+            n = (tab = resize()).length;
+
+        //根据对象的哈希值计算对象的存储位置，如果该位置没有元素，就存储元素
+        if ((p = tab[i = (n - 1) & hash]) == null)
+            tab[i] = newNode(hash, key, value, null);
+        else {
+            Node<K,V> e; K k;
+            /*
+                存入的元素与以前的元素比较哈希值
+                    如果哈希值不同，会继续向下执行，把元素添加到集合
+                    如果哈希值相同，会调用对象的equals()方法比较
+                        如果返回false，会继续向下执行，把元素添加到集合
+                        如果返回true，说明元素重复，不存储
+            */
+            if (p.hash == hash &&
+                ((k = p.key) == key || (key != null && key.equals(k))))
+                e = p;
+            else if (p instanceof TreeNode)
+                e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
+            else {
+                for (int binCount = 0; ; ++binCount) {
+                    if ((e = p.next) == null) {
+                        p.next = newNode(hash, key, value, null);
+                        if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                            treeifyBin(tab, hash);
+                        break;
+                    }
+                    if (e.hash == hash &&
+                        ((k = e.key) == key || (key != null && key.equals(k))))
+                        break;
+                    p = e;
+                }
+            }
+            if (e != null) { // existing mapping for key
+                V oldValue = e.value;
+                if (!onlyIfAbsent || oldValue == null)
+                    e.value = value;
+                afterNodeAccess(e);
+                return oldValue;
+            }
+        }
+        ++modCount;
+        if (++size > threshold)
+            resize();
+        afterNodeInsertion(evict);
+        return null;
+    }

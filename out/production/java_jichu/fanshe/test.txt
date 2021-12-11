@@ -1,0 +1,2 @@
+classAddress = fanshe.fanshe_lianxi.Student
+classMethod = learn

@@ -1,0 +1,2 @@
+classAddress=fanshe.fanshe_lianxi.Teacher
+classMethod=teachMore,45
